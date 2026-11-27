@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f7f4eb">
+<title>流光 · 小说推荐与排行榜</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- 液态玻璃折射滤镜：用 feTurbulence 生成位移贴图，feDisplacementMap 折射背景 -->
+<svg class="lg-defs" aria-hidden="true" focusable="false">
+  <filter id="lg-warp" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="17" result="noise"/>
+    <feGaussianBlur in="noise" stdDeviation="1.6" result="softNoise"/>
+    <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="14" xChannelSelector="R" yChannelSelector="G" result="warped"/>
+    <feGaussianBlur in="warped" stdDeviation="0.4"/>
+  </filter>
+  <filter id="lg-warp-soft" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.010 0.016" numOctaves="2" seed="9" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<!-- 背景光斑 -->
+<div class="bg" aria-hidden="true">
+  <span class="blob b1"></span>
+  <span class="blob b2"></span>
+  <span class="blob b3"></span>
+  <span class="blob b4"></span>
+  <span class="grain"></span>
+</div>
+
+<div class="topwrap">
+<header class="topbar glass" id="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/>
+        <path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5A2.5 2.5 0 0 1 4 20.5z"/>
+      </svg>
+    </span>
+    <span class="brand-text"><b>流光</b><i>LiuGuang</i></span>
+  </div>
+
+  <div class="search glass-inner" role="search">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+      <circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>
+    </svg>
+    <input id="q" type="search" placeholder="搜书名、作者、标签…" autocomplete="off" spellcheck="false" aria-label="搜索小说">
+    <button id="q-clear" class="q-clear" type="button" aria-label="清空" hidden>×</button>
+  </div>
+</header>
+
+<nav class="tabs glass" aria-label="主导航">
+  <button class="tab is-on" data-view="rank">排行榜</button>
+  <button class="tab" data-view="rec">推荐</button>
+  <button class="tab" data-view="cat">分类</button>
+  <button class="tab" data-view="fav">收藏 <span class="fav-count" id="fav-count">0</span></button>
+  <span class="tab-glider" id="glider" aria-hidden="true"></span>
+</nav>
+</div>
+
+<main id="main">
+  <!-- 排行榜 -->
+  <section id="view-rank" class="view is-on">
+    <div class="rank-head">
+      <h2>热度榜</h2>
+      <div class="seg glass-inner" id="rank-seg" role="tablist">
+        <button class="seg-btn is-on" data-sort="heat" role="tab">热度</button>
+        <button class="seg-btn" data-sort="r" role="tab">评分</button>
+        <button class="seg-btn" data-sort="fav" role="tab">收藏</button>
+        <button class="seg-btn" data-sort="y" role="tab">新近</button>
+      </div>
+    </div>
+    <ol class="rank-list" id="rank-list"></ol>
+  </section>
+
+  <!-- 推荐 -->
+  <section id="view-rec" class="view">
+    <h2 class="sec-title">今日书单 <em>按你的口味随便挑一本</em></h2>
+    <div class="hero" id="hero"></div>
+    <h2 class="sec-title small">你可能也会喜欢</h2>
+    <div class="grid" id="rec-grid"></div>
+  </section>
+
+  <!-- 分类 -->
+  <section id="view-cat" class="view">
+    <h2 class="sec-title">按分类找 <em id="cat-hint">全部</em></h2>
+    <div class="chips" id="chips"></div>
+    <div class="grid" id="cat-grid"></div>
+  </section>
+
+  <!-- 收藏 -->
+  <section id="view-fav" class="view">
+    <h2 class="sec-title">我的收藏 <em id="fav-hint">还没有收藏</em></h2>
+    <div class="grid" id="fav-grid"></div>
+    <p class="empty" id="fav-empty" hidden>点开任意一本书，右上角的心形即可收藏。</p>
+  </section>
+</main>
+
+<!-- 详情面板 -->
+<div class="sheet-scrim" id="scrim" hidden></div>
+<aside class="sheet glass" id="sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet-grip" aria-hidden="true"></div>
+  <button class="sheet-close" id="sheet-close" aria-label="关闭">×</button>
+  <div class="sheet-body" id="sheet-body"></div>
+</aside>
+
+<footer class="foot">
+  <p>流光 · 演示数据，共 <span id="total">0</span> 本</p>
+  <p class="tiny">液态玻璃效果用 SVG 位移贴图 + backdrop-filter 实现</p>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
